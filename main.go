@@ -7,6 +7,7 @@ import (
 	"github.com/Original_Gib/questlog/clients"
 	"github.com/Original_Gib/questlog/handlers"
 	"github.com/Original_Gib/questlog/services"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -26,6 +27,11 @@ func main() {
 	gamesHandler := handlers.NewGamesHandler(igdbService)
 
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"http://localhost:5173"},
+		AllowMethods: []string{"GET", "POST"},
+		AllowHeaders: []string{"Content-Type", "Authorization"},
+	}))
 
 	r.GET("/hello", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello, Gamer!"})
