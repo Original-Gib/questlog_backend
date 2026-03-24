@@ -197,8 +197,9 @@ func (c *IGDBClient) GetGameByID(ctx context.Context, id int) (*IGDBGame, error)
 
 // GetPopularGames fetches highly-rated main games (excludes DLC, bundles, expansions).
 func (c *IGDBClient) GetPopularGames(ctx context.Context) ([]IGDBGame, error) {
-	// category = 0 means main game; many games store null instead of 0, so we include both.
-	body := `sort rating desc; where rating_count > 100 & (category = 0 | category = null); fields name,cover.url,platforms.name,first_release_date,rating; limit 20;`
+	// parent_game = null excludes DLC/expansions; version_parent = null excludes GOTY/Complete editions.
+	// category filter alone is unreliable as IGDB leaves it null for many games.
+	body := `sort rating desc; where rating_count > 100 & parent_game = null & version_parent = null; fields name,cover.url,platforms.name,first_release_date,rating; limit 20;`
 	raw, err := c.Query(ctx, "games", body)
 	if err != nil {
 		return nil, err
