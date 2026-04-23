@@ -17,6 +17,7 @@ type IGDBServiceInterface interface {
 	SearchGames(ctx context.Context, query string) ([]services.GameSummary, error)
 	GetGameByID(ctx context.Context, id int) (*services.GameDetail, error)
 	GetPopularGames(ctx context.Context) ([]services.GameSummary, error)
+	GetUpcomingGames(ctx context.Context) ([]services.GameSummary, error)
 }
 
 // GamesHandler handles all game-related HTTP routes.
@@ -34,6 +35,7 @@ func NewGamesHandler(service IGDBServiceInterface) *GamesHandler {
 func (h *GamesHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("/games/search", h.SearchGames)
 	rg.GET("/games/popular", h.GetPopularGames)
+	rg.GET("/games/upcoming", h.GetUpcomingGames)
 	rg.GET("/games/:id", h.GetGameByID)
 }
 
@@ -79,6 +81,16 @@ func (h *GamesHandler) GetGameByID(c *gin.Context) {
 // GetPopularGames handles GET /api/v1/games/popular
 func (h *GamesHandler) GetPopularGames(c *gin.Context) {
 	games, err := h.service.GetPopularGames(c.Request.Context())
+	if err != nil {
+		httpError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"games": games})
+}
+
+// GetUpcomingGames handles GET /api/v1/games/upcoming
+func (h *GamesHandler) GetUpcomingGames(c *gin.Context) {
+	games, err := h.service.GetUpcomingGames(c.Request.Context())
 	if err != nil {
 		httpError(c, err)
 		return

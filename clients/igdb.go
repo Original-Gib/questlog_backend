@@ -159,6 +159,7 @@ type IGDBGame struct {
 	FirstReleaseDate int64          `json:"first_release_date"`
 	Rating           float64        `json:"rating"`
 	RatingCount      int            `json:"rating_count"`
+	Hypes            int            `json:"hypes"`
 	Summary          string         `json:"summary"`
 	Storyline        string         `json:"storyline"`
 }
@@ -193,6 +194,24 @@ func (c *IGDBClient) GetGameByID(ctx context.Context, id int) (*IGDBGame, error)
 		return nil, &IGDBError{StatusCode: http.StatusNotFound, Message: fmt.Sprintf("game %d not found", id)}
 	}
 	return &games[0], nil
+}
+
+// GetUpcomingGames fetches games with a future release date, sorted by hype count.
+func (c *IGDBClient) GetUpcomingGames(ctx context.Context) ([]IGDBGame, error) {
+	now := time.Now().Unix()
+	body := fmt.Sprintf(
+		`sort hypes desc; where first_release_date > %d & parent_game = null & version_parent = null; fields name,cover.url,platforms.name,first_release_date,hypes; limit 20;`,
+		now,
+	)
+	raw, err := c.Query(ctx, "games", body)
+	if err != nil {
+		return nil, err
+	}
+	var games []IGDBGame
+	if err := json.Unmarshal(raw, &games); err != nil {
+		return nil, fmt.Errorf("parsing upcoming games response: %w", err)
+	}
+	return games, nil
 }
 
 // GetPopularGames fetches highly-rated main games (excludes DLC, bundles, expansions).

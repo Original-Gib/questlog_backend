@@ -12,6 +12,7 @@ type IGDBClientInterface interface {
 	SearchGames(ctx context.Context, query string) ([]clients.IGDBGame, error)
 	GetGameByID(ctx context.Context, id int) (*clients.IGDBGame, error)
 	GetPopularGames(ctx context.Context) ([]clients.IGDBGame, error)
+	GetUpcomingGames(ctx context.Context) ([]clients.IGDBGame, error)
 }
 
 // GameSummary is the frontend-facing representation of a game in list views.
@@ -22,6 +23,7 @@ type GameSummary struct {
 	Platforms        []string `json:"platforms"`
 	FirstReleaseDate *int64   `json:"first_release_date"` // null if not set
 	Rating           *float64 `json:"rating"`             // null if not rated
+	Hypes            *int     `json:"hypes"`              // null if not set
 }
 
 // GameDetail is the frontend-facing representation of a single game's full details.
@@ -80,6 +82,18 @@ func (s *IGDBService) GetPopularGames(ctx context.Context) ([]GameSummary, error
 	return results, nil
 }
 
+func (s *IGDBService) GetUpcomingGames(ctx context.Context) ([]GameSummary, error) {
+	games, err := s.client.GetUpcomingGames(ctx)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]GameSummary, len(games))
+	for i, g := range games {
+		results[i] = toGameSummary(g)
+	}
+	return results, nil
+}
+
 // --- Transform helpers ---
 
 func toGameSummary(g clients.IGDBGame) GameSummary {
@@ -90,6 +104,7 @@ func toGameSummary(g clients.IGDBGame) GameSummary {
 		Platforms:        platformNames(g.Platforms),
 		FirstReleaseDate: nullableTimestamp(g.FirstReleaseDate),
 		Rating:           nullableRating(g.Rating),
+		Hypes:            nullableInt(g.Hypes),
 	}
 }
 
@@ -149,4 +164,11 @@ func nullableTimestamp(ts int64) *int64 {
 		return nil
 	}
 	return &ts
+}
+
+func nullableInt(n int) *int {
+	if n == 0 {
+		return nil
+	}
+	return &n
 }
